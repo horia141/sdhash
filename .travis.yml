@@ -8,3 +8,4 @@ install:
 - pip install scipy
 - pip install pillow
 script: nosetests
+sudo: false
