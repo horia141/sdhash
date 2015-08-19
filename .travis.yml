@@ -6,8 +6,8 @@ addons:
   apt:
     packages:
     - python-numpy
-    - python-scipy
 install:
 - pip install pillow
+- pip install scipy
 script: nosetests
 sudo: false
