@@ -1,9 +1,10 @@
 language: python
 python:
-- "2.5"
 - "2.6"
 - "2.7"
 install:
+- sudo apt-get update -qq
+- sudo apt-get install -qq libatlas-dev libatlas-base-dev liblapack-dev gfortran
 - pip install numpy
 - pip install scipy
 - pip install pillow
