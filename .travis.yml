@@ -8,8 +8,10 @@ addons:
     - python-numpy
     - libatlas-base-dev
     - gfortran
+    - python-scipy
 install:
 - pip install pillow
-- pip install scipy
 script: nosetests
 sudo: false
+virtualenv:
+  system_site_packages: true
