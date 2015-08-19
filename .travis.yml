@@ -6,6 +6,8 @@ addons:
   apt:
     packages:
     - python-numpy
+    - libatlas-base-dev
+    - gfortran
 install:
 - pip install pillow
 - pip install scipy
