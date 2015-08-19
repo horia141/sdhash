@@ -6,7 +6,7 @@ def readme():
 
 setup(
     name='sdhash',
-    version='0.1',
+    version='0.0.1a1',
     description='Library for image hashing and deduplication.',
     long_description=readme(),
     classifiers = [
@@ -31,6 +31,7 @@ setup(
     packages=[
         'sdhash',
     ],
+    install_requires=['pillow', 'numpy', 'scipy'],
     zip_safe=False,
     test_suite='nose.collector',
     tests_require=['nose'],
