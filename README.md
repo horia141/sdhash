@@ -1,8 +1,21 @@
 # SDHash
 
-A Python library useful for computing hashes of images which ignore perceptual differences.
+A Python library for computing hashes of images which ignore perceptual differences.
 
 ## Usage
+
+```python
+import sdhash
+from PIL import Image
+
+i1 = Image.open('test1.png')
+i2 = Image.open('test1_noise.png')
+i3 = Image.open('test2.png')
+
+sdhash.test_duplicate(i1, i2) # True
+sdhash.test_duplicate(i1, i3) # False
+sdhash.hash_image(i1) # [ and md5 output ]
+```
 
 ## Background
 
