@@ -1,6 +1,8 @@
 import hashlib
 from unittest import TestCase
 
+import numpy
+from scipy import fftpack
 from PIL import Image
 
 import sdhash
@@ -95,6 +97,24 @@ class AnimationSyntheticLarge(TestCase):
 
 class AnimationReal(TestCase):
     pass
+
+
+def _build_test_image(size, edge_width, core):
+    mat_dct = numpy.zeros((size[0] - 2 * edge_width, size[1] - 2 * edge_width))
+    row_idx = 0
+    for row in core:
+        col_idx = 0
+        for value in row:
+            mat_dct[row_idx, col_idx] = value
+            col_idx += 1
+        row_idx += 1
+
+    mat_core = fftpack.idct(fftpack.idct(mat_dct, norm='ortho').T, norm='ortho').T
+    mat = numpy.zeros(size)
+    mat[edge_width:size[0] - edge_width, edge_width:size[1] - edge_width] = mat_core
+    mat += 128
+
+    return Image.fromarray(numpy.uint8(mat))
 
 
 class TestSDHash(TestCase):
