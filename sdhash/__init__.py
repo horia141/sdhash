@@ -55,9 +55,9 @@ class Hash(object):
         hasher = hashlib.md5()
 
         if _is_video(im):
-            self._hash_video(im, hasher)
+            self._hash_animation(im, hasher)
         else:
-            self._hash_photo(im, hasher)
+            self._hash_image(im, hasher)
 
         return hasher.hexdigest()
 
@@ -76,7 +76,7 @@ class Hash(object):
 
         return hash1 == hash2
 
-    def _hash_photo(self, im, hasher):
+    def _hash_image(self, im, hasher):
         # Mark the fact that this is in the images space.
         hasher.update('IMAGE')
         # Add the height of the image to the photo hash.
@@ -86,7 +86,7 @@ class Hash(object):
         # Add the contents of the single frame to the hash.
         self._frame_hash(im, hasher)
 
-    def _hash_video(self, im, hasher):
+    def _hash_animation(self, im, hasher):
         # Mark the fact that this is in the video space.
         hasher.update('VIDEO')
         # Add the height of the video to the photo hash.
