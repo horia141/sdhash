@@ -10,7 +10,7 @@ class TestSDHash(TestCase):
     def test_hash_image(self):
         hasher = sdhash.Hash(standard_width=8, edge_width=2)
         im = Image.new('RGB', (8, 8), 'black')
-        self.assertEqual(hasher.hash_image(im), '5007cca1dbbc018703efc3e118281c63')
+        self.assertEqual(hasher.hash_image(im), '9761febb046365e9ce0cf2f31e0918cc')
 
     def test_test_duplicate(self):
         hasher = sdhash.Hash()
