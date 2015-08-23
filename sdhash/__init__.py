@@ -9,14 +9,48 @@ import scipy.fftpack as fftpack
 
 class Hash(object):
     """Object used for computing image hashes and testing duplicates."""
-    def __init__(self, standard_width=128, edge_width=16, 
-        key_frames=frozenset([0, 4, 9, 14, 19])):
+
+    DCT_COEFF_MIN = -1024
+    DCT_COEFF_MAX = 1023
+
+    def __init__(self, standard_width=128, edge_width=16, key_frames=frozenset([0, 4, 9, 14, 19]),
+            dct_core_width=4, dct_coeff_buckets=256):
+        """Create a Hash object.
+
+        Args:
+          standard_width: the common width all images will be resized to. The height will be
+            computed such that the aspect ratio is maintained.
+          edge_width: how much of the resized image edges to discard. 
+          key_frames: the set of frames to consider when computing hashes for animations.
+          dct_core_width: the size of the top-left matrix of the DCT of the image to include in
+            the hash computations.
+          dct_coeff_buckets: the quantization level for DCT coefficients from the top-left matrix
+            of the DCT of the image.
+        """
+        assert standard_width > 0
+        assert edge_width > 0
+        assert edge_width <= standard_width / 2
+        assert len(key_frames) > 0
+        assert dct_core_width > 0
+        assert dct_core_width <= standard_width - 2 * edge_width
+        assert dct_coeff_buckets > 0
+
         self._standard_width = standard_width
         self._edge_width = edge_width
         self._key_framss = sorted(list(key_frames))
+        self._dct_core_width = dct_core_width
+        self._dct_coeff_buckets = 128
+        self._dct_coeff_split = (self.DCT_COEFF_MAX - self.DCT_COEFF_MIN + 1) / dct_coeff_buckets
 
     def hash_image(self, im):
-        """Hash an image. Ignore details."""
+        """Hash an image. Ignore details.
+
+        Args:
+          im: a PIL image which will be hashed.
+
+        Returns:
+          An MD5 hash string, resistent to small small perceptual transformations.
+        """
         hasher = hashlib.md5()
 
         if _is_video(im):
@@ -27,7 +61,15 @@ class Hash(object):
         return hasher.hexdigest()
 
     def test_duplicate(self, im1, im2):
-        """Test whether two images are duplicates."""
+        """Test whether two images are duplicates.
+
+        Args:
+          im1: a PIL image.
+          im2: a PIL image.
+
+        Returns:
+          Whether the two images are perceptually identical, according to hash_image.
+        """
         hash1 = self.hash_image(im1)
         hash2 = self.hash_image(im2)
 
@@ -70,20 +112,20 @@ class Hash(object):
         im.seek(0)
 
     def _frame_hash(self, im, hasher):
-        def extract_coeff(coeff):
-            return max(min(int(coeff), 1023), -1024) / 16
-    
         im_gray = im.convert('L')
         (im_small, _) = _resize_to_width(im_gray, self._standard_width)
         mat = numpy.array(im_small, dtype=numpy.float) - 128
-        ep = self._edge_width
-        mat_core = mat[ep:(mat.shape[0]-ep), ep:(mat.shape[1]-ep)]
+        edge_width = self._edge_width
+        mat_core = mat[edge_width:(mat.shape[0]-edge_width), edge_width:(mat.shape[1]-edge_width)]
         mat_dct = fftpack.dct(fftpack.dct(mat_core, norm='ortho').T, norm='ortho').T
     
-        for ii in range(0, 4):
-            for jj in range(0, 4):
-                hasher.update('%04d' % extract_coeff(mat_dct[ii][jj]))
+        for ii in range(0, self._dct_core_width):
+            for jj in range(0, self._dct_core_width):
+                hasher.update('%04d' % self._prepare_coeff(mat_dct[ii][jj]))
 
+    def _prepare_coeff(self, coeff):
+        return max(min(int(coeff), self.DCT_COEFF_MAX), self.DCT_COEFF_MIN) / self._dct_coeff_split
+    
 
 def _is_video(im):
     try:
