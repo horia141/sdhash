@@ -5,6 +5,97 @@ from PIL import Image
 
 import sdhash
 
+# TODO(horia141):
+# A plan for testing
+# Must have a way of transforming DCT matrices into images
+#
+# Core
+# + construction & property access
+# + changes in defaults
+# + lower bounds for FP rate
+#
+# Image Synthetic Small-scale
+# - coefficients which are too large are clamped
+# - coefficients which are too small are clamped
+# - small differences in DCT coeffs don't matter
+# - only components in "core" matter
+# - edge components are ignoded
+# - images larger than MAX_HEIGHT are equivalent
+# - color components don't matter
+#
+# Image Synthetic Large-scale
+# - images at different resolutions are equivalent
+# - adding some noise doesn't matter
+# - some images are trully different though
+#
+# Images Real
+# - images at different resolution
+# - images with noise
+# - different images
+#
+# Animation Synthetic Large-scale
+#
+# Animation Real
+
+
+class Core(TestCase):
+    def test_construction(self):
+        hasher = sdhash.Hash(
+            standard_width=256,
+            edge_width=24,
+            key_frames=[0, 4, 9],
+            dct_core_width=8,
+            dct_coeff_buckets=128)
+
+        self.assertEquals(hasher.standard_width, 256)
+        self.assertEquals(hasher.edge_width, 24)
+        self.assertEquals(hasher.key_frames, [0, 4, 9])
+        self.assertEquals(hasher.dct_core_width, 8)
+        self.assertEquals(hasher.dct_coeff_buckets, 128)
+        self.assertEquals(hasher.dct_coeff_split, 16)
+
+    def test_defaults_have_changed(self):
+        hasher = sdhash.Hash()
+
+        self.assertEquals(hasher.standard_width, 128)
+        self.assertEquals(hasher.edge_width, 16)
+        self.assertEquals(hasher.key_frames, [0, 4, 9, 14, 19])
+        self.assertEquals(hasher.dct_core_width, 4)
+        self.assertEquals(hasher.dct_coeff_buckets, 256)
+        self.assertEquals(hasher.dct_coeff_split, 8)
+
+    def test_lower_bound_fp_rate(self):
+        TEST_CASES = [
+            ({'dct_core_width': 2, 'dct_coeff_buckets': 128}, 1.0 / (2 * 2 * 128)),
+            ({'dct_core_width': 4, 'dct_coeff_buckets': 64}, 1.0 / (4 * 4 * 64)),
+            ({'dct_core_width': 8, 'dct_coeff_buckets': 32}, 1.0 / (8 * 8 * 32)),
+            ({'dct_core_width': 16, 'dct_coeff_buckets': 32}, 1.0 / (16 * 16 * 32))
+            ]
+
+        for (input, expected_output) in TEST_CASES:
+            hasher = sdhash.Hash(**input)
+            self.assertEquals(hasher.lower_bound_fp_rate, expected_output)
+
+
+class ImageSyntheticSmall(TestCase):
+    pass
+
+
+class ImageSyntheticLarge(TestCase):
+    pass
+
+
+class ImageReal(TestCase):
+    pass
+
+
+class AnimationSyntheticLarge(TestCase):
+    pass
+
+
+class AnimationReal(TestCase):
+    pass
+
 
 class TestSDHash(TestCase):
     def test_hash_image(self):

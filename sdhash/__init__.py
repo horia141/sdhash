@@ -37,10 +37,11 @@ class Hash(object):
 
         self._standard_width = standard_width
         self._edge_width = edge_width
-        self._key_framss = sorted(list(key_frames))
+        self._key_frames = sorted(list(key_frames))
         self._dct_core_width = dct_core_width
-        self._dct_coeff_buckets = 128
+        self._dct_coeff_buckets = dct_coeff_buckets
         self._dct_coeff_split = (self.DCT_COEFF_MAX - self.DCT_COEFF_MIN + 1) / dct_coeff_buckets
+        self._lower_bound_fp_rate = 1.0 / (dct_core_width * dct_core_width * dct_coeff_buckets)
 
     def hash_image(self, im):
         """Hash an image. Ignore details.
@@ -125,6 +126,34 @@ class Hash(object):
 
     def _prepare_coeff(self, coeff):
         return max(min(int(coeff), self.DCT_COEFF_MAX), self.DCT_COEFF_MIN) / self._dct_coeff_split
+
+    @property
+    def standard_width(self):
+        return self._standard_width
+
+    @property
+    def edge_width(self):
+        return self._edge_width
+
+    @property
+    def key_frames(self):
+        return list(self._key_frames)
+
+    @property
+    def dct_core_width(self):
+        return self._dct_core_width
+
+    @property
+    def dct_coeff_buckets(self):
+        return self._dct_coeff_buckets
+
+    @property
+    def dct_coeff_split(self):
+        return self._dct_coeff_split
+
+    @property
+    def lower_bound_fp_rate(self):
+        return self._lower_bound_fp_rate
     
 
 def _is_video(im):
