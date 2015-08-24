@@ -136,11 +136,11 @@ class ImageSyntheticSmall(TestCase):
         {'name': 'Simple run with one coeff',
          'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1),
          'image': _build_test_image((32, 32), 0, [[1002]]),
-         'sequence': ['%d' % (32/5), '0125']},
+         'sequence': ['%d' % (32/5), '+0125']},
         {'name': 'Simple run with four coeffs',
          'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
          'image': _build_test_image((32, 32), 0, [[1002, 412], [412, 206]]),
-         'sequence': ['%d' % (32/5), '0125', '0051', '0051', '0025']}
+         'sequence': ['%d' % (32/5), '+0125', '+0051', '+0051', '+0025']}
         ]
 
     def test_hash_image(self):
@@ -164,21 +164,6 @@ class AnimationSyntheticLarge(TestCase):
 
 class AnimationReal(TestCase):
     pass
-
-
-class TestSDHash(TestCase):
-    def test_hash_image(self):
-        hasher = sdhash.Hash(standard_width=8, edge_width=2)
-        im = Image.new('RGB', (8, 8), 'black')
-        self.assertEqual(hasher.hash_image(im), '9761febb046365e9ce0cf2f31e0918cc')
-
-    def test_test_duplicate(self):
-        hasher = sdhash.Hash()
-        im1 = Image.new('RGB', (8, 8), 'black')
-        im2 = Image.new('RGB', (8, 8), 'black')
-        im3 = Image.new('RGB', (8, 8), 'white')
-        self.assertTrue(hasher.test_duplicate(im1, im2))
-        self.assertFalse(hasher.test_duplicate(im1, im3))
 
 
 if __name__ == '__main__':

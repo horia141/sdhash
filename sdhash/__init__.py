@@ -1,6 +1,7 @@
 """Library for image hashing and deduplication."""
 
 import hashlib
+import math
 
 import numpy
 from PIL import Image
@@ -122,10 +123,12 @@ class Hash(object):
     
         for ii in range(0, self._dct_core_width):
             for jj in range(0, self._dct_core_width):
-                hasher.update('%04d' % self._prepare_coeff(mat_dct[ii][jj]))
+                hasher.update(self._prepare_coeff(mat_dct[ii][jj]))
 
     def _prepare_coeff(self, coeff):
-        return max(min(int(coeff), self.DCT_COEFF_MAX), self.DCT_COEFF_MIN) / self._dct_coeff_split
+        clamped = max(min(int(coeff), self.DCT_COEFF_MAX), self.DCT_COEFF_MIN) / self._dct_coeff_split
+        sign = '+' if clamped > 0 else '-'
+        return '%s%04d' % (sign, clamped)
 
     @property
     def standard_width(self):
