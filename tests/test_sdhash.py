@@ -125,7 +125,7 @@ class Core(TestCase):
 
 
 class ImageSyntheticSmall(TestCase):
-    TEST_CASES = [
+    HASH_IMAGE_TEST_CASES = [
         {
             'name': 'Simple run with one coeff',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1),
@@ -202,18 +202,36 @@ class ImageSyntheticSmall(TestCase):
         ]
 
     def test_hash_image(self):
-        for test_case in self.TEST_CASES:
+        for test_case in self.HASH_IMAGE_TEST_CASES:
             md5hasher = _md5_sequence('IMAGE', *test_case['sequence'])
             hash_code = test_case['hasher'].hash_image(test_case['image'])
             self.assertEqual(hash_code, md5hasher.hexdigest(),
                 msg='Failed on "%s"' % test_case['name'])
 
-    def test_hash_image_discards_color(self):
-        im_1 = _build_random_color_image((16, 16))
-        im_2 = im_1.convert('F')
-        hasher = sdhash.Hash(standard_width=16, edge_width=0, dct_core_width=2)
+    TEST_DUPLICATE_TEST_CASES = [
+        {
+            'name': 'Slight difference in coeffs',
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'im_1': _build_test_image((32, 32), 0, [[1002, 412], [412, 206]]),
+            'im_2': _build_test_image((32, 32), 0, [[1003, 411], [413, 205]])
+            },
+        {
+            'name': 'Color images get ignored',
+            'hasher': sdhash.Hash(standard_width=16, edge_width=0, dct_core_width=2),
+            'im_1': _build_random_color_image((16, 16)),
+            'im_2': lambda im_1: im_1.convert('F')
+            }
+        ]
 
-        self.assertEqual(hasher.hash_image(im_1), hasher.hash_image(im_2))
+    def test_test_duplicate(self):
+        for test_case in self.TEST_DUPLICATE_TEST_CASES:
+            im_1 = test_case['im_1']
+            if hasattr(test_case['im_2'], '__call__'):
+                im_2 = test_case['im_2'](im_1)
+            else:
+                im_2 = test_case['im_1']
+            self.assertTrue(test_case['hasher'].test_duplicate(im_1, im_2),
+                msg='Failed on "%s"' % test_case['name'])
 
 
 class ImageSyntheticLarge(TestCase):
