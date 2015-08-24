@@ -147,7 +147,8 @@ class ImageSyntheticSmall(TestCase):
         for test_case in self.TEST_CASES:
             md5hasher = _md5_sequence('IMAGE', *test_case['sequence'])
             hash_code = test_case['hasher'].hash_image(test_case['image'])
-            self.assertEqual(hash_code, md5hasher.hexdigest())
+            self.assertEqual(hash_code, md5hasher.hexdigest(),
+                msg='Failed on "%s"' % test_case['name'])
 
 
 class ImageSyntheticLarge(TestCase):
