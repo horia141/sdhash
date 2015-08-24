@@ -41,88 +41,6 @@ import sdhash
 # Animation Real
 
 
-class Core(TestCase):
-    def test_construction(self):
-        hasher = sdhash.Hash(
-            standard_width=256,
-            edge_width=24,
-            key_frames=[0, 4, 9],
-            dct_core_width=8,
-            dct_coeff_buckets=128)
-
-        self.assertEquals(hasher.standard_width, 256)
-        self.assertEquals(hasher.edge_width, 24)
-        self.assertEquals(hasher.key_frames, [0, 4, 9])
-        self.assertEquals(hasher.dct_core_width, 8)
-        self.assertEquals(hasher.dct_coeff_buckets, 128)
-        self.assertEquals(hasher.dct_coeff_split, 16)
-
-    def test_defaults_have_changed(self):
-        hasher = sdhash.Hash()
-
-        self.assertEquals(hasher.standard_width, 128)
-        self.assertEquals(hasher.edge_width, 16)
-        self.assertEquals(hasher.key_frames, [0, 4, 9, 14, 19])
-        self.assertEquals(hasher.dct_core_width, 4)
-        self.assertEquals(hasher.dct_coeff_buckets, 256)
-        self.assertEquals(hasher.dct_coeff_split, 8)
-
-    def test_lower_bound_fp_rate(self):
-        TEST_CASES = [
-            ({'dct_core_width': 2, 'dct_coeff_buckets': 128}, 1.0 / (2 * 2 * 128)),
-            ({'dct_core_width': 4, 'dct_coeff_buckets': 64}, 1.0 / (4 * 4 * 64)),
-            ({'dct_core_width': 8, 'dct_coeff_buckets': 32}, 1.0 / (8 * 8 * 32)),
-            ({'dct_core_width': 16, 'dct_coeff_buckets': 32}, 1.0 / (16 * 16 * 32))
-            ]
-
-        for (input, expected_output) in TEST_CASES:
-            hasher = sdhash.Hash(**input)
-            self.assertEquals(hasher.lower_bound_fp_rate, expected_output)
-
-
-class ImageSyntheticSmall(TestCase):
-    def test_hash_image_simple_run_one_coeff(self):
-        md5hasher = _md5_sequence('IMAGE', '%d' % (32/5), '0125')
-
-        hasher = sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1)
-        im = _build_test_image((32, 32), 0, [[1002]])
-
-        self.assertEqual(hasher.hash_image(im), md5hasher.hexdigest())
-
-    def test_hash_image_simple_run_four_coeffs(self):
-        md5hasher = _md5_sequence('IMAGE', '%d' % (32/5), '0125', '0051', '0051', '0025')
-
-        hasher = sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2)
-        im = _build_test_image((32, 32), 0, [[1002, 412], [412, 206]])
-
-        self.assertEqual(hasher.hash_image(im), md5hasher.hexdigest())
-
-
-class ImageSyntheticLarge(TestCase):
-    pass
-
-
-class ImageReal(TestCase):
-    pass
-
-
-class AnimationSyntheticLarge(TestCase):
-    pass
-
-
-class AnimationReal(TestCase):
-    pass
-
-
-def _md5_sequence(*args):
-    md5hasher = hashlib.md5()
-
-    for arg in args:
-        md5hasher.update(arg)
-
-    return md5hasher
-
-
 def _build_test_image(size, edge_width, core):
     """Build a synthetic test image from given DCT coefficients.
 
@@ -163,6 +81,89 @@ def _build_test_image(size, edge_width, core):
     mat += 128
 
     return Image.fromarray(numpy.float32(mat), mode='F')
+
+
+def _md5_sequence(*args):
+    md5hasher = hashlib.md5()
+
+    for arg in args:
+        md5hasher.update(arg)
+
+    return md5hasher
+
+
+class Core(TestCase):
+    def test_construction(self):
+        hasher = sdhash.Hash(
+            standard_width=256,
+            edge_width=24,
+            key_frames=[0, 4, 9],
+            dct_core_width=8,
+            dct_coeff_buckets=128)
+
+        self.assertEquals(hasher.standard_width, 256)
+        self.assertEquals(hasher.edge_width, 24)
+        self.assertEquals(hasher.key_frames, [0, 4, 9])
+        self.assertEquals(hasher.dct_core_width, 8)
+        self.assertEquals(hasher.dct_coeff_buckets, 128)
+        self.assertEquals(hasher.dct_coeff_split, 16)
+
+    def test_defaults_have_changed(self):
+        hasher = sdhash.Hash()
+
+        self.assertEquals(hasher.standard_width, 128)
+        self.assertEquals(hasher.edge_width, 16)
+        self.assertEquals(hasher.key_frames, [0, 4, 9, 14, 19])
+        self.assertEquals(hasher.dct_core_width, 4)
+        self.assertEquals(hasher.dct_coeff_buckets, 256)
+        self.assertEquals(hasher.dct_coeff_split, 8)
+
+    def test_lower_bound_fp_rate(self):
+        TEST_CASES = [
+            ({'dct_core_width': 2, 'dct_coeff_buckets': 128}, 1.0 / (2 * 2 * 128)),
+            ({'dct_core_width': 4, 'dct_coeff_buckets': 64}, 1.0 / (4 * 4 * 64)),
+            ({'dct_core_width': 8, 'dct_coeff_buckets': 32}, 1.0 / (8 * 8 * 32)),
+            ({'dct_core_width': 16, 'dct_coeff_buckets': 32}, 1.0 / (16 * 16 * 32))
+            ]
+
+        for (input, expected_output) in TEST_CASES:
+            hasher = sdhash.Hash(**input)
+            self.assertEquals(hasher.lower_bound_fp_rate, expected_output)
+
+
+class ImageSyntheticSmall(TestCase):
+    TEST_CASES = [
+        {'name': 'Simple run with one coeff',
+         'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1),
+         'image': _build_test_image((32, 32), 0, [[1002]]),
+         'sequence': ['%d' % (32/5), '0125']},
+        {'name': 'Simple run with four coeffs',
+         'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+         'image': _build_test_image((32, 32), 0, [[1002, 412], [412, 206]]),
+         'sequence': ['%d' % (32/5), '0125', '0051', '0051', '0025']}
+        ]
+
+    def test_hash_image(self):
+        for test_case in self.TEST_CASES:
+            md5hasher = _md5_sequence('IMAGE', *test_case['sequence'])
+            hash_code = test_case['hasher'].hash_image(test_case['image'])
+            self.assertEqual(hash_code, md5hasher.hexdigest())
+
+
+class ImageSyntheticLarge(TestCase):
+    pass
+
+
+class ImageReal(TestCase):
+    pass
+
+
+class AnimationSyntheticLarge(TestCase):
+    pass
+
+
+class AnimationReal(TestCase):
+    pass
 
 
 class TestSDHash(TestCase):
