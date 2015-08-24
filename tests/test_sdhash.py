@@ -8,21 +8,9 @@ from PIL import Image
 import sdhash
 
 # TODO(horia141):
-# A plan for testing
-# Must have a way of transforming DCT matrices into images
-#
-# Core
-# + construction & property access
-# + changes in defaults
-# + lower bounds for FP rate
 #
 # Image Synthetic Small-scale
-# - one simple run through the hash_image
-# - coefficients which are too large are clamped
-# - coefficients which are too small are clamped
 # - small differences in DCT coeffs don't matter
-# - only components in "core" matter
-# - edge components are ignoded
 # - images larger than MAX_HEIGHT are equivalent
 # - color components don't matter
 #
@@ -146,6 +134,12 @@ class ImageSyntheticSmall(TestCase):
             'sequence': ['%d' % (32/5), '+0125', '+0051', '+0051', '+0025']
             },
         {
+            'name': 'Simple run with four coeffs, but slightly different',
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'image': _build_test_image((32, 32), 0, [[1003, 411], [413, 205]]),
+            'sequence': ['%d' % (32/5), '+0125', '+0051', '+0051', '+0025']
+            },
+        {
             'name': 'Simple run with four coeffs, with one negative coeff',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'image': _build_test_image((32, 32), 0, [[1002, 412], [-212, 206]]),
@@ -156,7 +150,50 @@ class ImageSyntheticSmall(TestCase):
                                   dct_coeff_buckets=128),
             'image': _build_test_image((32, 32), 0, [[1002, 412], [-212, 206]]),
             'sequence': ['%d' % (32/5), '+0062', '+0025', '-0014', '+0012']
-            }
+            },
+        {
+            'name': 'Coefficients get clamped',
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'image': _build_test_image((32, 32), 0, [[2048, 412], [-1080, 206]]),
+            'sequence': ['%d' % (32/5), '+0127', '+0051', '-0128', '+0025']
+            },
+        {
+            'name': 'Only look at the core',
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'image': _build_test_image((32, 32), 0, 
+                [[1002, 412, 44], [-212, 206, -32], [33, 409, 23]]),
+            'sequence': ['%d' % (32/5), '+0125', '+0051', '-0027', '+0025'],
+            },
+        {
+            'name': 'Do not look at the edges',
+            'hasher': sdhash.Hash(standard_width=32, edge_width=2, dct_core_width=2),
+            'image': _build_test_image((32, 32), 2, [[1002, 412], [-212, 206]]),
+            'sequence': ['%d' % (32/5), '+0125', '+0051', '-0027', '+0025'],
+            },
+        {
+            'name': 'Do not look at the edges #2',
+            'hasher': sdhash.Hash(standard_width=32, edge_width=4, dct_core_width=2),
+            'image': _build_test_image((32, 32), 4, [[1002, 412], [-212, 206]]),
+            'sequence': ['%d' % (32/5), '+0125', '+0051', '-0027', '+0025'],
+            },
+        {
+            'name': 'Image gets shrunk (coeffs x0.5)',
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'image': _build_test_image((64, 64), 0, [[1002, 412], [-212, 206]]),
+            'sequence': ['%d' % (64/5), '+0062', '+0025', '-0014', '+0012'],
+            },
+        {
+            'name': 'Image gets expanded (coeffs x2)',
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'image': _build_test_image((16, 16), 0, [[501, 206], [-106, 103]]),
+            'sequence': ['%d' % (16/5), '+0125', '+0051', '-0027', '+0025'],
+            },
+        {
+            'name': 'Image gets shrunk, with kept aspect ratio (coeffs x0.25)',
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'image': _build_test_image((64, 128), 0, [[1002, 412], [-212, 206]]),
+            'sequence': ['%d' % (64/5), '+0031', '+0012', '-0007', '+0006'],
+            },
         ]
 
     def test_hash_image(self):
