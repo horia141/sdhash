@@ -17,6 +17,7 @@ import sdhash
 # + lower bounds for FP rate
 #
 # Image Synthetic Small-scale
+# - one simple run through the hash_image
 # - coefficients which are too large are clamped
 # - coefficients which are too small are clamped
 # - small differences in DCT coeffs don't matter
@@ -80,7 +81,21 @@ class Core(TestCase):
 
 
 class ImageSyntheticSmall(TestCase):
-    pass
+    def test_hash_image_simple_run_one_coeff(self):
+        md5hasher = _md5_sequence('IMAGE', '%d' % (32/5), '0125')
+
+        hasher = sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1)
+        im = _build_test_image((32, 32), 0, [[1002]])
+
+        self.assertEqual(hasher.hash_image(im), md5hasher.hexdigest())
+
+    def test_hash_image_simple_run_four_coeffs(self):
+        md5hasher = _md5_sequence('IMAGE', '%d' % (32/5), '0125', '0051', '0051', '0025')
+
+        hasher = sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2)
+        im = _build_test_image((32, 32), 0, [[1002, 412], [412, 206]])
+
+        self.assertEqual(hasher.hash_image(im), md5hasher.hexdigest())
 
 
 class ImageSyntheticLarge(TestCase):
@@ -99,6 +114,15 @@ class AnimationReal(TestCase):
     pass
 
 
+def _md5_sequence(*args):
+    md5hasher = hashlib.md5()
+
+    for arg in args:
+        md5hasher.update(arg)
+
+    return md5hasher
+
+
 def _build_test_image(size, edge_width, core):
     mat_dct = numpy.zeros((size[0] - 2 * edge_width, size[1] - 2 * edge_width))
     row_idx = 0
@@ -114,7 +138,7 @@ def _build_test_image(size, edge_width, core):
     mat[edge_width:size[0] - edge_width, edge_width:size[1] - edge_width] = mat_core
     mat += 128
 
-    return Image.fromarray(numpy.uint8(mat))
+    return Image.fromarray(numpy.float32(mat), mode='F')
 
 
 class TestSDHash(TestCase):

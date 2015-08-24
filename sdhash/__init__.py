@@ -28,7 +28,7 @@ class Hash(object):
             of the DCT of the image.
         """
         assert standard_width > 0
-        assert edge_width > 0
+        assert edge_width >= 0
         assert edge_width <= standard_width / 2
         assert len(key_frames) > 0
         assert dct_core_width > 0
@@ -113,9 +113,9 @@ class Hash(object):
         im.seek(0)
 
     def _frame_hash(self, im, hasher):
-        im_gray = im.convert('L')
+        im_gray = im.convert('F')
         (im_small, _) = _resize_to_width(im_gray, self._standard_width)
-        mat = numpy.array(im_small, dtype=numpy.float) - 128
+        mat = numpy.asarray(im_small, dtype=numpy.float32) - 128
         edge_width = self._edge_width
         mat_core = mat[edge_width:(mat.shape[0]-edge_width), edge_width:(mat.shape[1]-edge_width)]
         mat_dct = fftpack.dct(fftpack.dct(mat_core, norm='ortho').T, norm='ortho').T
