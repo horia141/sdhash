@@ -71,6 +71,11 @@ def _build_test_image(size, edge_width, core):
     return Image.fromarray(numpy.float32(mat), mode='F')
 
 
+def _build_random_color_image(size):
+    mat = numpy.uint8(numpy.random.randint(0, 255, (size[0], size[1], 3)))
+    return Image.fromarray(mat, mode='RGB')
+
+
 def _md5_sequence(*args):
     md5hasher = hashlib.md5()
 
@@ -202,6 +207,13 @@ class ImageSyntheticSmall(TestCase):
             hash_code = test_case['hasher'].hash_image(test_case['image'])
             self.assertEqual(hash_code, md5hasher.hexdigest(),
                 msg='Failed on "%s"' % test_case['name'])
+
+    def test_hash_image_discards_color(self):
+        im_1 = _build_random_color_image((16, 16))
+        im_2 = im_1.convert('F')
+        hasher = sdhash.Hash(standard_width=16, edge_width=0, dct_core_width=2)
+
+        self.assertEqual(hasher.hash_image(im_1), hasher.hash_image(im_2))
 
 
 class ImageSyntheticLarge(TestCase):
