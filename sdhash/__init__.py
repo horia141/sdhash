@@ -128,7 +128,7 @@ class Hash(object):
     def _prepare_coeff(self, coeff):
         clamped = max(min(int(coeff), self.DCT_COEFF_MAX), self.DCT_COEFF_MIN) / self._dct_coeff_split
         sign = '+' if clamped > 0 else '-'
-        return '%s%04d' % (sign, clamped)
+        return '%s%04d' % (sign, abs(clamped))
 
     @property
     def standard_width(self):
