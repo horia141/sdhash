@@ -1,4 +1,4 @@
-# SDHash
+# SDHash [![Build Status](https://travis-ci.org/horia141/sdhash.svg?branch=master)](https://travis-ci.org/horia141/sdhash)
 
 A Python library for computing hashes of images which ignore perceptual differences.
 
