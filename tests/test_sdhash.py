@@ -124,6 +124,30 @@ def _md5_sequence(*args):
 
 
 def _build_test_image(size, edge_width, core):
+    """Build a synthetic test image from given DCT coefficients.
+
+    The result is a PIL image of size[0] rows and size[1] columns, in the 'F' format. Core is a list
+    of lists which describes the DCT coefficients to be placed at the core of the image. It must be
+    rectangular (that is, all lists should have the same length), but not necessarily square. An
+    initial (size[0]-2*edge_width)x(size[1]-2*edge_width) is generated from these DCT coefficients,
+    and then embedded in the center of a black image.
+
+    The output format is 'F' in order to ensure that Hash.hash_image gets as close to the
+    coefficients in core as possible.
+
+    Hint: ensure that the coefficients in core are not close to a multiple of Hash.dct_coeff_split,
+    since the rounding used is always floor, and the FP errors might lead to a number such as 1000
+    turninginto 999.99, which gets rounded to 999 and which is 124 when divided by the standard
+    Hash.dct_coeff_split of 8, rather than the original 125.
+
+    Args:
+      size: a two-element sequence containing the number of rows and columns of the output image.
+      edge_width: number of edge pixels in the image.
+      core: a rectangular list-of-lists containing DCT coefficients used to generate the image.
+
+    Returns:
+      A PIL image as described above.
+    """
     mat_dct = numpy.zeros((size[0] - 2 * edge_width, size[1] - 2 * edge_width))
     row_idx = 0
     for row in core:
