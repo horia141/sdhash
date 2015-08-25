@@ -80,10 +80,6 @@ class Hash(object):
     def _hash_image(self, im, hasher):
         # Mark the fact that this is in the images space.
         hasher.update('IMAGE')
-        # Add the height of the image to the photo hash.
-        _, height = im.size
-        hasher.update('%d' % (height / 5))
-
         # Add the contents of the single frame to the hash.
         self._frame_hash(im, hasher)
 
@@ -121,6 +117,9 @@ class Hash(object):
         mat_core = mat[edge_width:(mat.shape[0]-edge_width), edge_width:(mat.shape[1]-edge_width)]
         mat_dct = fftpack.dct(fftpack.dct(mat_core, norm='ortho').T, norm='ortho').T
     
+        _, height_small = im_small.size
+        hasher.update('%d' % (height_small / 5))
+
         for ii in range(0, self._dct_core_width):
             for jj in range(0, self._dct_core_width):
                 hasher.update(self._prepare_coeff(mat_dct[ii][jj]))

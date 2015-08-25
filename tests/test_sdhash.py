@@ -59,16 +59,19 @@ def _build_test_image(size, edge_width, core):
     for row in core:
         col_idx = 0
         for value in row:
-            mat_dct[row_idx, col_idx] = value
+            # Yup, it looks wierd. But we need to generate stuff in transpose space so
+            # Image.formarray picks it up correctly. So we generate the coefficients in a transposd
+            # form, and they'll be corrected when doing the final transpose.
+            mat_dct[col_idx, row_idx] = value
             col_idx += 1
         row_idx += 1
 
     mat_core = fftpack.idct(fftpack.idct(mat_dct, norm='ortho').T, norm='ortho').T
-    mat = numpy.zeros(size)
+    mat = numpy.float32(numpy.random.randint(0, 127, size))
     mat[edge_width:size[0] - edge_width, edge_width:size[1] - edge_width] = mat_core
     mat += 128
 
-    return Image.fromarray(numpy.float32(mat), mode='F')
+    return Image.fromarray(numpy.float32(mat).T, mode='F')
 
 
 def _build_random_color_image(size):
@@ -185,19 +188,19 @@ class ImageSyntheticSmall(TestCase):
             'name': 'Image gets shrunk (coeffs x0.5)',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'image': _build_test_image((64, 64), 0, [[1002, 412], [-212, 206]]),
-            'sequence': ['%d' % (64/5), '+0062', '+0025', '-0014', '+0012'],
+            'sequence': ['%d' % (32/5), '+0062', '+0025', '-0014', '+0012'],
             },
         {
             'name': 'Image gets expanded (coeffs x2)',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'image': _build_test_image((16, 16), 0, [[501, 206], [-106, 103]]),
-            'sequence': ['%d' % (16/5), '+0125', '+0051', '-0027', '+0025'],
+            'sequence': ['%d' % (32/5), '+0125', '+0051', '-0027', '+0025'],
             },
         {
             'name': 'Image gets shrunk, with kept aspect ratio (coeffs x0.25)',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'image': _build_test_image((64, 128), 0, [[1002, 412], [-212, 206]]),
-            'sequence': ['%d' % (64/5), '+0031', '+0012', '-0007', '+0006'],
+            'sequence': ['%d' % (64/5), '+0062', '+0025', '-0014', '+0012'],
             },
         ]
 
@@ -215,8 +218,65 @@ class ImageSyntheticSmall(TestCase):
             'modified': [
                 {
                     'name': 'Slightly different coeffs',
-                    'image': _build_test_image((32, 32), 0, [[1003, 411], [413, 205]]),
+                    'image': _build_test_image((32, 32), 0, [[1003, 411], [413, 205]])
+                    },
+                {
+                    'name': 'Only look at the core',
+                    'image': _build_test_image((32, 32), 0, 
+                        [[1002, 412, 44], [412, 206, -32], [33, 409, 23]])
+                    },
+                ]
+            },
+        {
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'reference': _build_test_image((32, 32), 0, [[1024, 412], [-1023, 206]]),
+            'modified': [
+                {
+                    'name': 'Coefficients get clamped to reference',
+                    'image': _build_test_image((32, 32), 0, [[2048, 412], [-1080, 206]]),
                     }
+                ]
+            },
+        {
+            'hasher': sdhash.Hash(standard_width=32, edge_width=2, dct_core_width=2),
+            'reference': _build_test_image((32, 32), 2, [[1002, 412], [412, 206]]),
+            'modified': [
+                {
+                    'name': 'Same border width, same coeffs',
+                    'image': _build_test_image((32, 32), 2, [[1002, 412], [412, 206]])
+                    },
+                {
+                    'name': 'Same border width, slightly different coeffs',
+                    'image': _build_test_image((32, 32), 2, [[1003, 411], [413, 205]])
+                    },
+                ]
+            },
+        {
+            'hasher': sdhash.Hash(standard_width=16, edge_width=0, dct_core_width=2),
+            'reference': _build_test_image((16, 16), 0, [[1002, 412], [412, 206]]),
+            'modified': [
+                {
+                    'name': 'Image of double size',
+                    'image': _build_test_image((32, 32), 0, [[2004, 824], [824, 412]])
+                    },
+                {
+                    'name': 'Image of half size',
+                    'image': _build_test_image((8, 8), 0, [[501, 206], [206, 103]])
+                    },
+                ]
+            },
+        {
+            'hasher': sdhash.Hash(standard_width=16, edge_width=0, dct_core_width=2),
+            'reference': _build_test_image((16, 32), 0, [[1002, 412], [412, 206]]),
+            'modified': [
+                {
+                    'name': 'Rectangular image of double size',
+                    'image': _build_test_image((32, 64), 0, [[2004, 824], [824, 412]])
+                    },
+                {
+                    'name': 'Rectangular image of half size',
+                    'image': _build_test_image((8, 16), 0, [[501, 206], [206, 103]])
+                    },
                 ]
             },
         {
