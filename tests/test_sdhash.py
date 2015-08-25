@@ -210,28 +210,40 @@ class ImageSyntheticSmall(TestCase):
 
     TEST_DUPLICATE_TEST_CASES = [
         {
-            'name': 'Slight difference in coeffs',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
-            'im_1': _build_test_image((32, 32), 0, [[1002, 412], [412, 206]]),
-            'im_2': _build_test_image((32, 32), 0, [[1003, 411], [413, 205]])
+            'reference': _build_test_image((32, 32), 0, [[1002, 412], [412, 206]]),
+            'modified': [
+                {
+                    'name': 'Slightly different coeffs',
+                    'image': _build_test_image((32, 32), 0, [[1003, 411], [413, 205]]),
+                    }
+                ]
             },
         {
-            'name': 'Color images get ignored',
             'hasher': sdhash.Hash(standard_width=16, edge_width=0, dct_core_width=2),
-            'im_1': _build_random_color_image((16, 16)),
-            'im_2': lambda im_1: im_1.convert('F')
+            'reference': _build_random_color_image((16, 16)),
+            'modified': [
+                {
+                    'name': 'Color components get ingored',
+                    'image': lambda ref: ref.convert('F')
+                    }
+                ]
             }
         ]
 
     def test_test_duplicate(self):
         for test_case in self.TEST_DUPLICATE_TEST_CASES:
-            im_1 = test_case['im_1']
-            if hasattr(test_case['im_2'], '__call__'):
-                im_2 = test_case['im_2'](im_1)
-            else:
-                im_2 = test_case['im_1']
-            self.assertTrue(test_case['hasher'].test_duplicate(im_1, im_2),
-                msg='Failed on "%s"' % test_case['name'])
+            hasher = test_case['hasher']
+            reference = test_case['reference']
+
+            for modified in test_case['modified']:
+                if hasattr(modified['image'], '__call__'):
+                    image = modified['image'](reference)
+                else:
+                    image = modified['image']
+
+                self.assertTrue(hasher.test_duplicate(reference, image),
+                     msg='Failed on "%s"' % modified['name'])
 
 
 class ImageSyntheticLarge(TestCase):
