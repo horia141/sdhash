@@ -86,9 +86,6 @@ class Hash(object):
     def _hash_animation(self, im, hasher):
         # Mark the fact that this is in the video space.
         hasher.update('VIDEO')
-        # Add the height of the video to the photo hash.
-        _, height = im.size
-        hasher.update('%d' % (height / 5))
 
         # Add the contents of each key frame to the hash. Algorithm is kind of ugly.
         # We can only seek to consecutive frames. So this means we have to do the
