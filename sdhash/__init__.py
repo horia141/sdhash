@@ -13,9 +13,10 @@ class Hash(object):
 
     DCT_COEFF_MIN = -1024
     DCT_COEFF_MAX = 1023
+    MAX_HEIGHT = 2048
 
     def __init__(self, standard_width=128, edge_width=16, key_frames=frozenset([0, 4, 9, 14, 19]),
-            dct_core_width=4, dct_coeff_buckets=256):
+            height_buckets=256, dct_core_width=4, dct_coeff_buckets=256):
         """Create a Hash object.
 
         Args:
@@ -23,6 +24,8 @@ class Hash(object):
             computed such that the aspect ratio is maintained.
           edge_width: how much of the resized image edges to discard. 
           key_frames: the set of frames to consider when computing hashes for animations.
+          height_buckets: the quantization level for image heights. Note: maximum height is limited,
+            so the internval [0, MAX_HEIGHT] is split into height_buckets sized zones.
           dct_core_width: the size of the top-left matrix of the DCT of the image to include in
             the hash computations.
           dct_coeff_buckets: the quantization level for DCT coefficients from the top-left matrix
@@ -32,16 +35,21 @@ class Hash(object):
         assert edge_width >= 0
         assert edge_width <= standard_width / 2
         assert len(key_frames) > 0
+        assert height_buckets > 0
+        assert height_buckets <= self.MAX_HEIGHT
         assert dct_core_width > 0
         assert dct_core_width <= standard_width - 2 * edge_width
         assert dct_coeff_buckets > 0
+        assert dct_coeff_buckets <= (self.DCT_COEFF_MAX - self.DCT_COEFF_MIN + 1)
 
         self._standard_width = standard_width
         self._edge_width = edge_width
         self._key_frames = sorted(list(key_frames))
+        self._height_buckets = height_buckets
+        self._height_split = float(self.MAX_HEIGHT) / height_buckets
         self._dct_core_width = dct_core_width
         self._dct_coeff_buckets = dct_coeff_buckets
-        self._dct_coeff_split = (self.DCT_COEFF_MAX - self.DCT_COEFF_MIN + 1) / dct_coeff_buckets
+        self._dct_coeff_split = float(self.DCT_COEFF_MAX - self.DCT_COEFF_MIN + 1) / dct_coeff_buckets
         self._lower_bound_fp_rate = 1.0 / (dct_core_width * dct_core_width * dct_coeff_buckets)
 
     def hash_image(self, im):
@@ -108,22 +116,22 @@ class Hash(object):
 
     def _frame_hash(self, im, hasher):
         im_gray = im.convert('F')
-        (im_small, _) = _resize_to_width(im_gray, self._standard_width)
+        im_small = _resize_to_width(im_gray, self._standard_width)
         mat = numpy.asarray(im_small, dtype=numpy.float32) - 128
         edge_width = self._edge_width
         mat_core = mat[edge_width:(mat.shape[0]-edge_width), edge_width:(mat.shape[1]-edge_width)]
         mat_dct = fftpack.dct(fftpack.dct(mat_core, norm='ortho').T, norm='ortho').T
     
         _, height_small = im_small.size
-        hasher.update('%d' % (height_small / 5))
+        hasher.update('%d' % (height_small / self._height_split))
 
         for ii in range(0, self._dct_core_width):
             for jj in range(0, self._dct_core_width):
                 hasher.update(self._prepare_coeff(mat_dct[ii][jj]))
 
     def _prepare_coeff(self, coeff):
-        clamped = max(min(int(coeff), self.DCT_COEFF_MAX), self.DCT_COEFF_MIN) / self._dct_coeff_split
-        sign = '+' if clamped > 0 else '-'
+        clamped = int(max(min(coeff, self.DCT_COEFF_MAX), self.DCT_COEFF_MIN) / self._dct_coeff_split)
+        sign = '+' if clamped >= 0 else '-'
         return '%s%04d' % (sign, abs(clamped))
 
     @property
@@ -137,6 +145,14 @@ class Hash(object):
     @property
     def key_frames(self):
         return list(self._key_frames)
+
+    @property
+    def height_buckets(self):
+        return self._height_buckets
+
+    @property
+    def height_split(self):
+        return self._height_split
 
     @property
     def dct_core_width(self):
@@ -170,4 +186,9 @@ def _resize_to_width(im, desired_width):
     desired_height = int(aspect_ratio * desired_width)
     desired_height = desired_height + desired_height % 2 # Always a multiple of 2.
     im_resized = im.resize((desired_width, desired_height), Image.ANTIALIAS)
-    return (im_resized, desired_height)
+    if desired_height >= Hash.MAX_HEIGHT:
+        im_cropped = im_resized.crop((0, 0, desired_width, Hash.MAX_HEIGHT))
+        im_cropped.load()
+    else:
+        im_cropped = im_resized
+    return im_cropped

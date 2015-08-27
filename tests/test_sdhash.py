@@ -94,12 +94,15 @@ class Core(TestCase):
             standard_width=256,
             edge_width=24,
             key_frames=[0, 4, 9],
+            height_buckets=128,
             dct_core_width=8,
             dct_coeff_buckets=128)
 
         self.assertEquals(hasher.standard_width, 256)
         self.assertEquals(hasher.edge_width, 24)
         self.assertEquals(hasher.key_frames, [0, 4, 9])
+        self.assertEquals(hasher.height_buckets, 128)
+        self.assertEquals(hasher.height_split, 16)
         self.assertEquals(hasher.dct_core_width, 8)
         self.assertEquals(hasher.dct_coeff_buckets, 128)
         self.assertEquals(hasher.dct_coeff_split, 16)
@@ -110,6 +113,8 @@ class Core(TestCase):
         self.assertEquals(hasher.standard_width, 128)
         self.assertEquals(hasher.edge_width, 16)
         self.assertEquals(hasher.key_frames, [0, 4, 9, 14, 19])
+        self.assertEquals(hasher.height_buckets, 256)
+        self.assertEquals(hasher.height_split, 8)
         self.assertEquals(hasher.dct_core_width, 4)
         self.assertEquals(hasher.dct_coeff_buckets, 256)
         self.assertEquals(hasher.dct_coeff_split, 8)
@@ -133,74 +138,94 @@ class ImageSyntheticSmall(TestCase):
             'name': 'Simple run with one coeff',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1),
             'image': _build_test_image((32, 32), 0, [[1002]]),
-            'sequence': ['%d' % (32/5), '+0125']
+            'sequence': ['%d' % (32 / 8), '+0125']
             },
         {
             'name': 'Simple run with four coeffs',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'image': _build_test_image((32, 32), 0, [[1002, 412], [412, 206]]),
-            'sequence': ['%d' % (32/5), '+0125', '+0051', '+0051', '+0025']
+            'sequence': ['%d' % (32 / 8), '+0125', '+0051', '+0051', '+0025']
             },
         {
             'name': 'Simple run with four coeffs, but slightly different',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'image': _build_test_image((32, 32), 0, [[1003, 411], [413, 205]]),
-            'sequence': ['%d' % (32/5), '+0125', '+0051', '+0051', '+0025']
+            'sequence': ['%d' % (32 / 8), '+0125', '+0051', '+0051', '+0025']
             },
         {
             'name': 'Simple run with four coeffs, with one negative coeff',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'image': _build_test_image((32, 32), 0, [[1002, 412], [-212, 206]]),
-            'sequence': ['%d' % (32/5), '+0125', '+0051', '-0027', '+0025']},
+            'sequence': ['%d' % (32 / 8), '+0125', '+0051', '-0026', '+0025']
+            },
         {
             'name': 'Simple run with different number of buckets',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2,
                                   dct_coeff_buckets=128),
             'image': _build_test_image((32, 32), 0, [[1002, 412], [-212, 206]]),
-            'sequence': ['%d' % (32/5), '+0062', '+0025', '-0014', '+0012']
+            'sequence': ['%d' % (32 / 8), '+0062', '+0025', '-0013', '+0012']
             },
         {
             'name': 'Coefficients get clamped',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'image': _build_test_image((32, 32), 0, [[2048, 412], [-1080, 206]]),
-            'sequence': ['%d' % (32/5), '+0127', '+0051', '-0128', '+0025']
+            'sequence': ['%d' % (32 / 8), '+0127', '+0051', '-0128', '+0025']
+            },
+        {
+            'name': 'Image gets size bucketed',
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1),
+            'image': _build_test_image((32, 34), 0, [[0]]),
+            'sequence': ['%d' % (34 / 8), '+0000']
+            },
+        {
+            'name': 'Image gets size bucketed',
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, height_buckets=100,
+                 dct_core_width=1),
+            'image': _build_test_image((32, 34), 0, [[0]]),
+            'sequence': ['%d' % (34 / 20.48), '+0000']
             },
         {
             'name': 'Only look at the core',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'image': _build_test_image((32, 32), 0, 
                 [[1002, 412, 44], [-212, 206, -32], [33, 409, 23]]),
-            'sequence': ['%d' % (32/5), '+0125', '+0051', '-0027', '+0025'],
+            'sequence': ['%d' % (32 / 8), '+0125', '+0051', '-0026', '+0025'],
             },
         {
             'name': 'Do not look at the edges',
             'hasher': sdhash.Hash(standard_width=32, edge_width=2, dct_core_width=2),
             'image': _build_test_image((32, 32), 2, [[1002, 412], [-212, 206]]),
-            'sequence': ['%d' % (32/5), '+0125', '+0051', '-0027', '+0025'],
+            'sequence': ['%d' % (32 / 8), '+0125', '+0051', '-0026', '+0025'],
             },
         {
             'name': 'Do not look at the edges #2',
             'hasher': sdhash.Hash(standard_width=32, edge_width=4, dct_core_width=2),
             'image': _build_test_image((32, 32), 4, [[1002, 412], [-212, 206]]),
-            'sequence': ['%d' % (32/5), '+0125', '+0051', '-0027', '+0025'],
+            'sequence': ['%d' % (32 / 8), '+0125', '+0051', '-0026', '+0025'],
             },
         {
             'name': 'Image gets shrunk (coeffs x0.5)',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'image': _build_test_image((64, 64), 0, [[1002, 412], [-212, 206]]),
-            'sequence': ['%d' % (32/5), '+0062', '+0025', '-0014', '+0012'],
+            'sequence': ['%d' % (32 / 8), '+0062', '+0025', '-0013', '+0012'],
             },
         {
             'name': 'Image gets expanded (coeffs x2)',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'image': _build_test_image((16, 16), 0, [[501, 206], [-106, 103]]),
-            'sequence': ['%d' % (32/5), '+0125', '+0051', '-0027', '+0025'],
+            'sequence': ['%d' % (32 / 8), '+0125', '+0051', '-0026', '+0025'],
             },
         {
             'name': 'Image gets shrunk, with kept aspect ratio (coeffs x0.25)',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'image': _build_test_image((64, 128), 0, [[1002, 412], [-212, 206]]),
-            'sequence': ['%d' % (64/5), '+0062', '+0025', '-0014', '+0012'],
+            'sequence': ['%d' % (64 / 8), '+0062', '+0025', '-0013', '+0012'],
+            },
+        {
+            'name': 'Giant image gets clamped in height',
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1),
+            'image': _build_test_image((32, 4096), 0, [[0]]),
+            'sequence': ['%d' % (2048 / 8), '+0000'],
             },
         ]
 
@@ -229,11 +254,31 @@ class ImageSyntheticSmall(TestCase):
             },
         {
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
-            'reference': _build_test_image((32, 32), 0, [[1024, 412], [-1023, 206]]),
+            'reference': _build_test_image((32, 32), 0, [[1023, 412], [-1027, 206]]),
             'modified': [
                 {
                     'name': 'Coefficients get clamped to reference',
                     'image': _build_test_image((32, 32), 0, [[2048, 412], [-1080, 206]]),
+                    }
+                ]
+            },
+        {
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1),
+            'reference': _build_test_image((32, 34), 0, [[0]]),
+            'modified': [
+                {
+                    'name': 'Height gets assigned to the same bucket',
+                    'image': _build_test_image((32, 36), 0, [[0]]),
+                    }
+                ]
+            },
+        {
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1),
+            'reference': _build_test_image((32, 2048), 0, [[0]]),
+            'modified': [
+                {
+                    'name': 'Height gets clamped to MAX_WIDTH',
+                    'image': _build_test_image((32, 4096), 0, [[0]]),
                     }
                 ]
             },
