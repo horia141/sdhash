@@ -16,7 +16,7 @@ class Hash(object):
     MAX_HEIGHT = 2048
 
     def __init__(self, standard_width=128, edge_width=16, key_frames=frozenset([0, 4, 9, 14, 19]),
-            height_buckets=256, dct_core_width=4, dct_coeff_buckets=256):
+            height_buckets=256, dct_core_width=4, dct_coeff_buckets=128):
         """Create a Hash object.
 
         Args:

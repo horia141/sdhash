@@ -1,4 +1,5 @@
 import hashlib
+import os
 from unittest import TestCase
 
 import numpy
@@ -8,20 +9,9 @@ from PIL import Image
 import sdhash
 
 # TODO(horia141):
-#
-# Image Synthetic Small-scale
-# - small differences in DCT coeffs don't matter
-# - images larger than MAX_HEIGHT are equivalent
-# - color components don't matter
-#
-# Image Synthetic Large-scale
-# - images at different resolutions are equivalent
-# - adding some noise doesn't matter
-# - some images are trully different though
-#
+
 # Images Real
 # - images at different resolution
-# - images with noise
 # - different images
 #
 # Animation Synthetic Large-scale
@@ -96,7 +86,7 @@ class Core(TestCase):
             key_frames=[0, 4, 9],
             height_buckets=128,
             dct_core_width=8,
-            dct_coeff_buckets=128)
+            dct_coeff_buckets=256)
 
         self.assertEquals(hasher.standard_width, 256)
         self.assertEquals(hasher.edge_width, 24)
@@ -104,8 +94,8 @@ class Core(TestCase):
         self.assertEquals(hasher.height_buckets, 128)
         self.assertEquals(hasher.height_split, 16)
         self.assertEquals(hasher.dct_core_width, 8)
-        self.assertEquals(hasher.dct_coeff_buckets, 128)
-        self.assertEquals(hasher.dct_coeff_split, 16)
+        self.assertEquals(hasher.dct_coeff_buckets, 256)
+        self.assertEquals(hasher.dct_coeff_split, 8)
 
     def test_defaults_have_changed(self):
         hasher = sdhash.Hash()
@@ -116,8 +106,8 @@ class Core(TestCase):
         self.assertEquals(hasher.height_buckets, 256)
         self.assertEquals(hasher.height_split, 8)
         self.assertEquals(hasher.dct_core_width, 4)
-        self.assertEquals(hasher.dct_coeff_buckets, 256)
-        self.assertEquals(hasher.dct_coeff_split, 8)
+        self.assertEquals(hasher.dct_coeff_buckets, 128)
+        self.assertEquals(hasher.dct_coeff_split, 16)
 
     def test_lower_bound_fp_rate(self):
         TEST_CASES = [
@@ -132,98 +122,111 @@ class Core(TestCase):
             self.assertEquals(hasher.lower_bound_fp_rate, expected_output)
 
 
-class ImageSyntheticSmall(TestCase):
+class ImageSynthetic(TestCase):
     HASH_IMAGE_TEST_CASES = [
         {
             'name': 'Simple run with one coeff',
-            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1),
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1,
+                 dct_coeff_buckets=256),
             'image': _build_test_image((32, 32), 0, [[1002]]),
             'sequence': ['%d' % (32 / 8), '+0125']
             },
         {
             'name': 'Simple run with four coeffs',
-            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2,
+                 dct_coeff_buckets=256),
             'image': _build_test_image((32, 32), 0, [[1002, 412], [412, 206]]),
             'sequence': ['%d' % (32 / 8), '+0125', '+0051', '+0051', '+0025']
             },
         {
             'name': 'Simple run with four coeffs, but slightly different',
-            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2,
+                 dct_coeff_buckets=256),
             'image': _build_test_image((32, 32), 0, [[1003, 411], [413, 205]]),
             'sequence': ['%d' % (32 / 8), '+0125', '+0051', '+0051', '+0025']
             },
         {
             'name': 'Simple run with four coeffs, with one negative coeff',
-            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2,
+                 dct_coeff_buckets=256),
             'image': _build_test_image((32, 32), 0, [[1002, 412], [-212, 206]]),
             'sequence': ['%d' % (32 / 8), '+0125', '+0051', '-0026', '+0025']
             },
         {
             'name': 'Simple run with different number of buckets',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2,
-                                  dct_coeff_buckets=128),
+                 dct_coeff_buckets=128),
             'image': _build_test_image((32, 32), 0, [[1002, 412], [-212, 206]]),
             'sequence': ['%d' % (32 / 8), '+0062', '+0025', '-0013', '+0012']
             },
         {
             'name': 'Coefficients get clamped',
-            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2,
+                 dct_coeff_buckets=256),
             'image': _build_test_image((32, 32), 0, [[2048, 412], [-1080, 206]]),
             'sequence': ['%d' % (32 / 8), '+0127', '+0051', '-0128', '+0025']
             },
         {
             'name': 'Image gets size bucketed',
-            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1),
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1,
+                 dct_coeff_buckets=256),
             'image': _build_test_image((32, 34), 0, [[0]]),
             'sequence': ['%d' % (34 / 8), '+0000']
             },
         {
             'name': 'Image gets size bucketed',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, height_buckets=100,
-                 dct_core_width=1),
+                 dct_coeff_buckets=256, dct_core_width=1),
             'image': _build_test_image((32, 34), 0, [[0]]),
             'sequence': ['%d' % (34 / 20.48), '+0000']
             },
         {
             'name': 'Only look at the core',
-            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2,
+                 dct_coeff_buckets=256),
             'image': _build_test_image((32, 32), 0, 
                 [[1002, 412, 44], [-212, 206, -32], [33, 409, 23]]),
             'sequence': ['%d' % (32 / 8), '+0125', '+0051', '-0026', '+0025'],
             },
         {
             'name': 'Do not look at the edges',
-            'hasher': sdhash.Hash(standard_width=32, edge_width=2, dct_core_width=2),
+            'hasher': sdhash.Hash(standard_width=32, edge_width=2, dct_core_width=2,
+                 dct_coeff_buckets=256),
             'image': _build_test_image((32, 32), 2, [[1002, 412], [-212, 206]]),
             'sequence': ['%d' % (32 / 8), '+0125', '+0051', '-0026', '+0025'],
             },
         {
             'name': 'Do not look at the edges #2',
-            'hasher': sdhash.Hash(standard_width=32, edge_width=4, dct_core_width=2),
+            'hasher': sdhash.Hash(standard_width=32, edge_width=4, dct_core_width=2,
+                 dct_coeff_buckets=256),
             'image': _build_test_image((32, 32), 4, [[1002, 412], [-212, 206]]),
             'sequence': ['%d' % (32 / 8), '+0125', '+0051', '-0026', '+0025'],
             },
         {
             'name': 'Image gets shrunk (coeffs x0.5)',
-            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2,
+                 dct_coeff_buckets=256),
             'image': _build_test_image((64, 64), 0, [[1002, 412], [-212, 206]]),
             'sequence': ['%d' % (32 / 8), '+0062', '+0025', '-0013', '+0012'],
             },
         {
             'name': 'Image gets expanded (coeffs x2)',
-            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2,
+                 dct_coeff_buckets=256),
             'image': _build_test_image((16, 16), 0, [[501, 206], [-106, 103]]),
             'sequence': ['%d' % (32 / 8), '+0125', '+0051', '-0026', '+0025'],
             },
         {
             'name': 'Image gets shrunk, with kept aspect ratio (coeffs x0.25)',
-            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2,
+                 dct_coeff_buckets=256),
             'image': _build_test_image((64, 128), 0, [[1002, 412], [-212, 206]]),
             'sequence': ['%d' % (64 / 8), '+0062', '+0025', '-0013', '+0012'],
             },
         {
             'name': 'Giant image gets clamped in height',
-            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1),
+            'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1,
+                 dct_coeff_buckets=256),
             'image': _build_test_image((32, 4096), 0, [[0]]),
             'sequence': ['%d' % (2048 / 8), '+0000'],
             },
@@ -351,12 +354,84 @@ class ImageSyntheticSmall(TestCase):
                      msg='Failed on "%s"' % modified['name'])
 
 
-class ImageSyntheticLarge(TestCase):
-    pass
-
-
 class ImageReal(TestCase):
-    pass
+    TEST_CASES = [
+        {
+            'reference': 'londoneye.original.png',
+            'modified': [
+                {
+                    'name': 'Another copy of the original',
+                    'image': 'londoneye.originaldup.png'
+                    },
+                {
+                    'name': 'JPEG version with quality=95',
+                    'image': 'londoneye.qual95.jpg'
+                    },
+                {
+                    'name': 'JPEG version with quality=80',
+                    'image': 'londoneye.qual80.jpg'
+                    },
+                {
+                    'name': 'JPEG version with quality=75',
+                    'image': 'londoneye.qual75.jpg'
+                    },
+                {
+                    'name': 'JPEG version with quality=50',
+                    'image': 'londoneye.qual50.jpg'
+                    },
+                {
+                    'hasher': {'dct_core_width': 6, 'dct_coeff_buckets': 32},
+                    'name': 'JPEG version with quality=25',
+                    'image': 'londoneye.qual25.jpg'
+                    },
+                {
+                    'hasher': {'dct_core_width': 6, 'dct_coeff_buckets': 32},
+                    'name': 'GIF version',
+                    'image': 'londoneye.original.gif'
+                    },
+                {
+                    'name': 'Scale 2x',
+                    'image': 'londoneye.scale2x.png'
+                    },
+                {
+                    'name': 'Scale 3x',
+                    'image': 'londoneye.scale3x.png'
+                    },
+                {
+                    'name': 'Scale 4x',
+                    'image': 'londoneye.scale4x.png'
+                    },
+                {
+                    'name': 'Scale 0.5x',
+                    'image': 'londoneye.scale05x.png'
+                    },
+                {
+                    'hasher': {'dct_coeff_buckets': 4},
+                    'name': 'Grayscale version',
+                    'image': 'londoneye.gray.png'
+                    },
+                {
+                    'name': 'With gaussian noise at amplitude=0.1',
+                    'image': 'londoneye.noise01.png'
+                    },
+                {
+                    'hasher': {'dct_coeff_buckets': 16},
+                    'name': 'With gaussian noise at amplitude=0.2',
+                    'image': 'londoneye.noise02.png'
+                    },
+                ]
+            },
+        ]
+
+    def test_test_duplicates(self):
+        for test_case in self.TEST_CASES:
+            reference = Image.open(os.path.join('tests', 'data', test_case['reference']))
+
+            for modified in test_case['modified']:
+                hasher = sdhash.Hash(**(modified.get('hasher', {})))
+                image = Image.open(os.path.join('tests', 'data', modified['image']))
+                self.assertTrue(hasher.test_duplicate(reference, image),
+                    msg='Failed on "%s"' % modified['name'])
 
 
 class AnimationSyntheticLarge(TestCase):
