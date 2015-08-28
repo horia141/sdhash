@@ -406,9 +406,13 @@ class ImageReal(TestCase):
                     'image': 'londoneye.scale05x.png'
                     },
                 {
+                    'name': 'Grayscale version (via PIL)',
+                    'image': 'londoneye.pilgray.png'
+                    },
+                {
                     'hasher': {'dct_coeff_buckets': 4},
-                    'name': 'Grayscale version',
-                    'image': 'londoneye.gray.png'
+                    'name': 'Grayscale version (via ImageMagick)',
+                    'image': 'londoneye.magickgray.png'
                     },
                 {
                     'name': 'With gaussian noise at amplitude=0.1',
