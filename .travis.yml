@@ -11,6 +11,7 @@ addons:
     - imagemagick
 install:
 - pip install pillow
+- pip install tabletest
 script: nosetests
 sudo: false
 virtualenv:

@@ -36,5 +36,5 @@ setup(
     install_requires=['pillow', 'numpy', 'scipy'],
     zip_safe=False,
     test_suite='nose.collector',
-    tests_require=['nose'],
+    tests_require=['nose', 'tabletest'],
 )

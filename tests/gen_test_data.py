@@ -66,7 +66,7 @@ _GENERATORS = [
         'name': 'With gaussian noise at amplitude=0.1',
         'command': 'convert {0}.original.png -evaluate Gaussian-noise 0.1 {0}.noise01.png',
         'outfile': '{0}.noise01.png',
-        'hasher': {'dct_coeff_buckets': 64}
+        'hasher': {'dct_coeff_buckets': 32}
         },
     {
         'name': 'With gaussian noise at amplitude=0.2',
