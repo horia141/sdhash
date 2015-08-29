@@ -8,6 +8,7 @@ addons:
     - libatlas-base-dev
     - gfortran
     - python-scipy
+    - imagemagick
 install:
 - pip install pillow
 script: nosetests
