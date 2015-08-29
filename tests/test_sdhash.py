@@ -356,11 +356,7 @@ class ImageSynthetic(TestCase):
 
 
 class ImageReal(TestCase):
-    TEST_CASES = []
-
-    @classmethod
-    def setUpClass(cls):
-        cls.TEST_CASES = gen_test_data.gen_test_data()
+    TEST_CASES = gen_test_data.gen_test_data()
 
     @classmethod
     def tearDownClass(cls):
