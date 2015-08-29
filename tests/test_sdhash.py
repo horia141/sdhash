@@ -7,6 +7,7 @@ from scipy import fftpack
 from PIL import Image
 
 import sdhash
+import tests.gen_test_data as gen_test_data
 
 # TODO(horia141):
 
@@ -355,77 +356,15 @@ class ImageSynthetic(TestCase):
 
 
 class ImageReal(TestCase):
-    TEST_CASES = [
-        {
-            'reference': 'londoneye.original.png',
-            'modified': [
-                {
-                    'name': 'Another copy of the original',
-                    'image': 'londoneye.originaldup.png'
-                    },
-                {
-                    'name': 'JPEG version with quality=95',
-                    'image': 'londoneye.qual95.jpg'
-                    },
-                {
-                    'name': 'JPEG version with quality=80',
-                    'image': 'londoneye.qual80.jpg'
-                    },
-                {
-                    'name': 'JPEG version with quality=75',
-                    'image': 'londoneye.qual75.jpg'
-                    },
-                {
-                    'name': 'JPEG version with quality=50',
-                    'image': 'londoneye.qual50.jpg'
-                    },
-                {
-                    'hasher': {'dct_core_width': 6, 'dct_coeff_buckets': 32},
-                    'name': 'JPEG version with quality=25',
-                    'image': 'londoneye.qual25.jpg'
-                    },
-                {
-                    'hasher': {'dct_core_width': 6, 'dct_coeff_buckets': 32},
-                    'name': 'GIF version',
-                    'image': 'londoneye.original.gif'
-                    },
-                {
-                    'name': 'Scale 2x',
-                    'image': 'londoneye.scale2x.png'
-                    },
-                {
-                    'name': 'Scale 3x',
-                    'image': 'londoneye.scale3x.png'
-                    },
-                {
-                    'name': 'Scale 4x',
-                    'image': 'londoneye.scale4x.png'
-                    },
-                {
-                    'name': 'Scale 0.5x',
-                    'image': 'londoneye.scale05x.png'
-                    },
-                {
-                    'name': 'Grayscale version (via PIL)',
-                    'image': 'londoneye.pilgray.png'
-                    },
-                {
-                    'hasher': {'dct_coeff_buckets': 4},
-                    'name': 'Grayscale version (via ImageMagick)',
-                    'image': 'londoneye.magickgray.png'
-                    },
-                {
-                    'name': 'With gaussian noise at amplitude=0.1',
-                    'image': 'londoneye.noise01.png'
-                    },
-                {
-                    'hasher': {'dct_coeff_buckets': 16},
-                    'name': 'With gaussian noise at amplitude=0.2',
-                    'image': 'londoneye.noise02.png'
-                    },
-                ]
-            },
-        ]
+    TEST_CASES = []
+
+    @classmethod
+    def setUpClass(cls):
+        cls.TEST_CASES = gen_test_data.gen_test_data()
+
+    @classmethod
+    def tearDownClass(cls):
+        gen_test_data.clear_test_data(cls.TEST_CASES)
 
     def test_test_duplicates(self):
         for test_case in self.TEST_CASES:
