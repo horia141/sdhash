@@ -1,6 +1,7 @@
 import hashlib
 import os
 from unittest import TestCase
+from tabletest import TableTestCase
 
 import numpy
 from scipy import fftpack
@@ -123,8 +124,8 @@ class Core(TestCase):
             self.assertEquals(hasher.lower_bound_fp_rate, expected_output)
 
 
-class ImageSynthetic(TestCase):
-    HASH_IMAGE_TEST_CASES = [
+class ImageSyntheticHashImage(TableTestCase):
+    TEST_CASES = [
         {
             'name': 'Simple run with one coeff',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1,
@@ -233,14 +234,15 @@ class ImageSynthetic(TestCase):
             },
         ]
 
-    def test_hash_image(self):
-        for test_case in self.HASH_IMAGE_TEST_CASES:
-            md5hasher = _md5_sequence('IMAGE', *test_case['sequence'])
-            hash_code = test_case['hasher'].hash_image(test_case['image'])
-            self.assertEqual(hash_code, md5hasher.hexdigest(),
-                msg='Failed on "%s"' % test_case['name'])
+    def tabletest(self, test_case):
+        md5hasher = _md5_sequence('IMAGE', *test_case['sequence'])
+        hash_code = test_case['hasher'].hash_image(test_case['image'])
+        self.assertEqual(hash_code, md5hasher.hexdigest(),
+            msg='Failed on "%s"' % test_case['name'])
 
-    TEST_DUPLICATE_TEST_CASES = [
+
+class ImageSyntheticTestDuplicate(TableTestCase):
+    TEST_CASES = [
         {
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'reference': _build_test_image((32, 32), 0, [[1002, 412], [412, 206]]),
@@ -340,37 +342,35 @@ class ImageSynthetic(TestCase):
             }
         ]
 
-    def test_test_duplicate(self):
-        for test_case in self.TEST_DUPLICATE_TEST_CASES:
-            hasher = test_case['hasher']
-            reference = test_case['reference']
+    def tabletest(self, test_case):
+        hasher = test_case['hasher']
+        reference = test_case['reference']
 
-            for modified in test_case['modified']:
-                if hasattr(modified['image'], '__call__'):
-                    image = modified['image'](reference)
-                else:
-                    image = modified['image']
+        for modified in test_case['modified']:
+            if hasattr(modified['image'], '__call__'):
+                image = modified['image'](reference)
+            else:
+                image = modified['image']
 
-                self.assertTrue(hasher.test_duplicate(reference, image),
-                     msg='Failed on "%s"' % modified['name'])
+            self.assertTrue(hasher.test_duplicate(reference, image),
+                 msg='Failed on "%s"' % modified['name'])
 
 
-class ImageReal(TestCase):
+class ImageReal(TableTestCase):
     TEST_CASES = gen_test_data.gen_test_data()
 
     @classmethod
     def tearDownClass(cls):
         gen_test_data.clear_test_data(cls.TEST_CASES)
 
-    def test_test_duplicates(self):
-        for test_case in self.TEST_CASES:
-            reference = Image.open(os.path.join('tests', 'data', test_case['reference']))
+    def tabletest(self, test_case):
+        reference = Image.open(os.path.join('tests', 'data', test_case['reference']))
 
-            for modified in test_case['modified']:
-                hasher = sdhash.Hash(**(modified.get('hasher', {})))
-                image = Image.open(os.path.join('tests', 'data', modified['image']))
-                self.assertTrue(hasher.test_duplicate(reference, image),
-                    msg='Failed on "%s"' % modified['name'])
+        for modified in test_case['modified']:
+            hasher = sdhash.Hash(**(modified.get('hasher', {})))
+            image = Image.open(os.path.join('tests', 'data', modified['image']))
+            self.assertTrue(hasher.test_duplicate(reference, image),
+                msg='Failed on "%s"' % modified['name'])
 
 
 class AnimationSyntheticLarge(TestCase):
