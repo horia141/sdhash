@@ -15,6 +15,7 @@ Depends on:
 """
 
 import glob
+import logging
 import os
 import re
 import subprocess
@@ -41,7 +42,7 @@ _GENERATORS = [
         'outfile': '{0}.qual80.jpg'
         },
     {
-        'name': 'JPEG version with quality=70',
+        'name': 'JPEG version with quality=75',
         'command': 'convert {0}.original.png -quality 75 {0}.qual75.jpg',
         'outfile': '{0}.qual75.jpg'
         },
@@ -54,19 +55,19 @@ _GENERATORS = [
         'name': 'JPEG version with quality=25',
         'command': 'convert {0}.original.png -quality 25 {0}.qual25.jpg',
         'outfile': '{0}.qual25.jpg',
-        'hasher': {'dct_core_width': 6, 'dct_coeff_buckets': 32},
+        'hasher': {'dct_coeff_buckets': 32}
         },
     {
         'name': 'GIF version',
         'command': 'convert {0}.original.png {0}.original.gif',
         'outfile': '{0}.original.gif',
-        'hasher': {'dct_core_width': 6, 'dct_coeff_buckets': 32}
+        'hasher': {'dct_coeff_buckets': 32}
         },
     {
         'name': 'With gaussian noise at amplitude=0.1',
         'command': 'convert {0}.original.png -evaluate Gaussian-noise 0.1 {0}.noise01.png',
         'outfile': '{0}.noise01.png',
-        'hasher': {'dct_coeff_buckets': 64}
+        'hasher': {'dct_coeff_buckets': 24}
         },
     {
         'name': 'With gaussian noise at amplitude=0.2',
@@ -122,22 +123,20 @@ def gen_test_data():
         assert match is not None
         kernel = match.group(1)
 
-        test_case = {
-            'reference': base,
-            'modified': []
-            }
-
         os.chdir('./tests/data')
         try:
             for gen in _GENERATORS:
+                name = '{0} - {1}'.format(original, gen['name'])
+                logging.info('Building output {0}'.format(name))
                 if hasattr(gen['command'], '__call__'):
                     gen['command'](kernel)
                 else:
                     subprocess.check_call(gen['command'].format(kernel), shell=True)
-                test_case['modified'].append({
-                    'name': gen['name'],
-                    'image': gen['outfile'].format(kernel),
-                    'hasher': gen.get('hasher', {}),
+                test_cases.append({
+                    'name': name,
+                    'reference': base,
+                    'modified': gen['outfile'].format(kernel),
+                    'hasher': gen.get('hasher', {})
                     })
         except (subprocess.CalledProcessError, IOError) as e:
             print 'Error'
@@ -146,19 +145,16 @@ def gen_test_data():
         finally:
             os.chdir('../..')
 
-        test_cases.append(test_case)
-
     return test_cases
 
 
 def clear_test_data(test_cases):
     for test_case in test_cases:
         os.chdir('./tests/data')
-        for m in test_case['modified']:
-            try:
-                os.remove(m['image'])
-            except Error as e:
-                pass
+        try:
+            os.remove(test_case['modified'])
+        except Exception as e:
+            pass
         os.chdir('../..')
 
 
