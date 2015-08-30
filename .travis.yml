@@ -12,7 +12,7 @@ addons:
 install:
 - pip install pillow
 - pip install tabletest
-script: nosetests
+script: python -m unittest tests.test_sdhash
 sudo: false
 virtualenv:
   system_site_packages: true
