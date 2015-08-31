@@ -6,11 +6,11 @@ def readme():
 
 setup(
     name='sdhash',
-    version='0.0.1a1',
+    version='0.0.1',
     description='Library for image hashing and deduplication.',
     long_description=readme(),
     classifiers = [
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',

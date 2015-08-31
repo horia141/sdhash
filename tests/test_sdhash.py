@@ -2,6 +2,7 @@ import hashlib
 import logging
 import os
 from unittest import TestCase
+import tabletest
 from tabletest import TableTestCase
 
 import numpy
@@ -120,21 +121,22 @@ class Core(TableTestCase):
         self.assertEquals(hasher.dct_coeff_buckets, 128)
         self.assertEquals(hasher.dct_coeff_split, 16)
 
-    TEST_CASES = [
+    LOWER_BOUND_FP_RATE_TEST_CASES = [
         ({'dct_core_width': 2, 'dct_coeff_buckets': 128}, 1.0 / (2 * 2 * 128)),
         ({'dct_core_width': 4, 'dct_coeff_buckets': 64}, 1.0 / (4 * 4 * 64)),
         ({'dct_core_width': 8, 'dct_coeff_buckets': 32}, 1.0 / (8 * 8 * 32)),
         ({'dct_core_width': 16, 'dct_coeff_buckets': 32}, 1.0 / (16 * 16 * 32))
         ]
 
-    def tabletest(self, test_case):
+    @tabletest.tabletest(LOWER_BOUND_FP_RATE_TEST_CASES)
+    def test_lower_bound_fp_rate(self, test_case):
         (input, expected_output) = test_case
         hasher = sdhash.Hash(**input)
         self.assertEquals(hasher.lower_bound_fp_rate, expected_output)
 
 
-class ImageSyntheticHashImage(TableTestCase):
-    TEST_CASES = [
+class ImageSynthetic(TableTestCase):
+    HASH_IMAGE_TEST_CASES = [
         {
             'name': 'Simple run with one coeff',
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=1,
@@ -243,15 +245,14 @@ class ImageSyntheticHashImage(TableTestCase):
             },
         ]
 
-    def tabletest(self, test_case):
+    @tabletest.tabletest(HASH_IMAGE_TEST_CASES)
+    def test_hash_image(self, test_case):
         md5hasher = _md5_sequence('IMAGE', *test_case['sequence'])
         hash_code = test_case['hasher'].hash_image(test_case['image'])
         self.assertEqual(hash_code, md5hasher.hexdigest(),
             msg='Failed on "%s"' % test_case['name'])
 
-
-class ImageSyntheticTestDuplicate(TableTestCase):
-    TEST_CASES = _flatten_for_test_duplicate([
+    TEST_DUPLICATE_TEST_CASES = _flatten_for_test_duplicate([
         {
             'hasher': sdhash.Hash(standard_width=32, edge_width=0, dct_core_width=2),
             'reference': _build_test_image((32, 32), 0, [[1002, 412], [412, 206]]),
@@ -351,7 +352,8 @@ class ImageSyntheticTestDuplicate(TableTestCase):
             }
         ])
 
-    def tabletest(self, test_case):
+    @tabletest.tabletest(TEST_DUPLICATE_TEST_CASES)
+    def test_test_duplicate(self, test_case):
         reference = test_case['reference']
         if hasattr(test_case['modified'], '__call__'):
             modified = test_case['modified'](reference)
@@ -369,7 +371,8 @@ class ImageReal(TableTestCase):
     def tearDownClass(cls):
         gen_test_data.clear_test_data(cls.TEST_CASES)
 
-    def tabletest(self, test_case):
+    @tabletest.tabletest(TEST_CASES)
+    def test_test_duplicate(self, test_case):
         reference = Image.open(os.path.join('tests', 'data', test_case['reference']))
         modified = Image.open(os.path.join('tests', 'data', test_case['modified']))
         hasher = sdhash.Hash(**(test_case.get('hasher', {})))
