@@ -23,9 +23,15 @@ Suppose you want to test that two images are identical. The naive approach of si
 
 ## Algorithm
 
-## Dependencies
+## Installation ##
 
 The Python image library and NumPy/SciPy etc.
+
+Installation is simple, via `pip`:
+
+```bash
+pip install sdhash
+```
 
 ## TODO
 
