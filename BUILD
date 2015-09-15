@@ -18,7 +18,8 @@ py_test(
       "tests/test_sdhash.py"
     ],
     deps = [
-      ":sdhash"
+      ":sdhash",
+      "@tabletest//:tabletest",
     ],
     data = [
        ":sdhash_test_data"
