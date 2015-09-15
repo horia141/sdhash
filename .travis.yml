@@ -36,7 +36,7 @@ before_install:
 
 install:
   - pip install pillow
-  - pip install tabletest
+  # - pip install tabletest
 
 script:
   - bazel --bazelrc=tools/bazelrc test --test_output=all //:sdhash_test
