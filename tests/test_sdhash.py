@@ -1,7 +1,7 @@
 import hashlib
 import logging
 import os
-from unittest import TestCase
+import unittest
 import tabletest
 from tabletest import TableTestCase
 
@@ -380,7 +380,7 @@ class ImageReal(TableTestCase):
             msg='Failed on "%s"' % test_case['name'])
 
 
-class AnimationReal(TestCase):
+class AnimationReal(TableTestCase):
     pass
 
 
