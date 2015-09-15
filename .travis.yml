@@ -1,18 +1,47 @@
 language: python
+
 python:
 - "2.7"
+
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
-    - python-numpy
-    - libatlas-base-dev
-    - gfortran
-    - python-scipy
-    - imagemagick
+      - gcc-4.8
+      - g++-4.8
+      - wget
+      # Package list from http://bazel.io/docs/install.html
+      - openjdk-7-jdk
+      - openjdk-7-source
+      - pkg-config
+      - zip
+      - zlib1g-dev
+      # Packages for the current library.
+      - python-numpy
+      - libatlas-base-dev
+      - gfortran
+      - python-scipy
+      - imagemagick
+
+# Eventually, Bazel will have binary packages and we'll be able to
+# just download a prebuilt distribution of Bazel. For now, build it
+# from source every time.
+before_install:
+  - wget 'https://github.com/bazelbuild/bazel/releases/download/0.1.0/bazel-0.1.0-installer-linux-x86_64.sh'
+  - sha256sum -c tools/bazel-0.1.0-installer-linux-x86_64.sh.sha256
+  - chmod +x bazel-0.1.0-installer-linux-x86_64.sh
+  - ./bazel-0.1.0-installer-linux-x86_64.sh --user
+  - cat ~/.bazelrc >> ./tools/bazelrc
+
 install:
-- pip install pillow
-- pip install tabletest
-script: python -m unittest tests.test_sdhash
+  - pip install pillow
+  - pip install tabletest
+
+script:
+  - bazel --bazelrc=tools/bazelrc test --test_output=all //:tabletest_test
+
 sudo: false
+
 virtualenv:
   system_site_packages: true
