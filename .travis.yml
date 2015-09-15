@@ -39,7 +39,7 @@ install:
   - pip install tabletest
 
 script:
-  - bazel --bazelrc=tools/bazelrc test --test_output=all //:tabletest_test
+  - bazel --bazelrc=tools/bazelrc test --test_output=all //:sdhash_test
 
 sudo: false
 
