@@ -33,7 +33,7 @@ py_test(
 
 pypi_package(
     name = "sdhash_pkg",
-    version = "0.0.1",
+    version = "0.0.2",
     description = "Library for image hashing and deduplication.",
     long_description = "README.md",
     classifiers = [
