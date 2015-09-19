@@ -3,7 +3,6 @@ load("/tools/pypi_package", "pypi_package")
 py_library(
     name = "sdhash",
     srcs = ["sdhash/__init__.py"],
-    srcs_version = "PY2"
 )
 
 filegroup(
@@ -60,5 +59,5 @@ pypi_package(
     packages = [":sdhash"],
     install_requires = ["pillow", "numpy", "scipy"],
     test_suite = "nose.collector",
-    tests_require = ["nose", "tabletest"],
+    tests_require = ["nose", "@tabletest//:tabletest_pkg"],
 )
