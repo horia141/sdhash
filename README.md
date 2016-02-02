@@ -23,7 +23,9 @@ h.hash_image(i1) # [ an md5 output ]
 
 As humans, it's very easy to spot if two images are "the same". Unfortunately, the same
 thing can't be said of computers. A simple approach such as comparing two images pixel
-by pixel will fail in all but the most simple of cases.
+by pixel will fail in all but the most simple of cases. Even a more sophisticated method
+such as computing an `L1` or `L2` mean distance between the images and taking a small
+value to imply similarity is not much better.
 
 For example, given an original image A, the following should produce equivalent images:
 * Scaling with the same aspect ratio.
