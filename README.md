@@ -37,8 +37,8 @@ For example, given an original image A, the following should produce equivalent 
 The previous set of transformations can be said to be natural, that is, they will most
 certainly occur in any systen, as images get moved around, edited etc .
 However, there's an even bigger class of transformations which are adversarial, that is,
-somebody is trying to trick the systemnto believing one image is original when it is in
-fact not. User generated content sitesface this problem, regardless of the mode of the
+somebody is trying to trick the system to believe one image is original when it is in
+fact not. User generated content sites face this problem, regardless of the mode of the
 content (text, image, audio, video).
 
 The following adverserial transformations should produce equivalent images, as well:
@@ -51,8 +51,8 @@ The following adverserial transformations should produce equivalent images, as w
 * Large-scale editing restricted to a small area (replacing some text with another,
 for example)
 
-SDHash tries to solve the problem of identifying if two images are identical or not,
-modulo all theransformations in the first group, and some (removing of borders and 
+SDHash tries to solve the problem of whether two images are identical or not, modulo
+all theransformations in the first group, and some (removing of borders and 
 color plane lterations) from the second.
 
 The API it exposes is simple. The `test_duplicate` method receives two PIL images as
@@ -61,16 +61,16 @@ images as equivalent or not. The `hash_image` method returns a base64 encoded md
 hash of "stable" image contents. The `test_duplicate` method is essentially a test
 of whether the hashes of the arguments are equal. For more advanced usage, the second
 method is the tool of choice. For example, a database table of the hashes can be used,
-withhe result of `hash_image` as a primary key. Whenever new image needs to be added it
+with the result of `hash_image` as a primary key. Whenever new image needs to be added it
 can be checked first against the table and only if it is not found already, inserted.
 This allows `O(1)` comparisons to be performed for each insertion, instead of `O(n)`.
 Similarly, a MapReduce job can compute the hashes of images in the map stage, which will
 result in all identical images being grouped together with the same key in the reduce
 stage. This allows an `O(n)` algorithm for deuplicating a large dataset.
 
-As a bonus, SDHash works with GIF animations as well. It treats them as a sequence
-of frames. Only the first, fifth, tenth etc. frames are considered. The same approach
-is used, only the stream of data added to the md5 hasher is taken from all frames.
+As a bonus, SDHash works with GIF animations. It treats them as a sequence of frames.
+Only the first, fifth, tenth etc. frames are considered. The same approach used, only
+the stream of data added to the md5 hasher is taken from all frames.
 
 ## Algorithm
 
@@ -88,7 +88,10 @@ provided.
 
 ## Installation
 
-The Python image library and NumPy/SciPy etc.
+The main dependencies are on the Python image library and NumPy/SciPy etc. As such,
+depending on SDHash brings along a lot of baggage. Ideally and since it only depends
+on a very small piece of functionality, the library would just include the DCT code
+directly. Feel free to contribute a well tested implementation.
 
 Installation is simple, via `pip`:
 
