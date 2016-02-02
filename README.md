@@ -69,8 +69,8 @@ result in all identical images being grouped together with the same key in the r
 stage. This allows an `O(n)` algorithm for deuplicating a large dataset.
 
 As a bonus, SDHash works with GIF animations. It treats them as a sequence of frames.
-Only the first, fifth, tenth etc. frames are considered. The same approach used, only
-the stream of data added to the md5 hasher is taken from all frames.
+Only the first, fifth, tenth etc. frames are considered. The same basic approach is used,
+but all the frames are considered at once.
 
 ## Algorithm
 
